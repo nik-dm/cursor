@@ -1,9 +1,9 @@
 import streamlit as st
-import streamlit_authenticator as stauth
 from streamlit_option_menu import option_menu
 import yaml
 import os
 import sys
+import hashlib
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -63,39 +63,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Authentication configuration
-def load_auth_config():
-    """Load authentication configuration"""
-    config_path = Path(__file__).parent / "auth_config.yaml"
+# Simple authentication system
+def hash_password(password):
+    """Hash password using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def check_credentials(username, password):
+    """Check if credentials are valid"""
+    # Default admin credentials (in production, store these securely)
+    valid_users = {
+        'admin': hash_password('admin123')
+    }
     
-    if not config_path.exists():
-        # Create default config
-        default_config = {
-            'credentials': {
-                'usernames': {
-                    'admin': {
-                        'email': 'admin@linkedin-bot.com',
-                        'name': 'Administrator',
-                        'password': '$2b$12$k8Y1THKC7zJW8Q7x8GJ8XO8ZX7ZJ8Y1THKC7zJW8Q7x8GJ8XO8ZX7'  # 'admin123'
-                    }
-                }
-            },
-            'cookie': {
-                'name': 'linkedin_bot_auth',
-                'key': 'linkedin_bot_secret_key',
-                'expiry_days': 30
-            },
-            'preauthorized': ['admin@linkedin-bot.com']
-        }
-        
-        with open(config_path, 'w') as f:
-            yaml.dump(default_config, f)
-    
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+    if username in valid_users:
+        return hash_password(password) == valid_users[username]
+    return False
 
 def init_session_state():
     """Initialize session state variables"""
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    if 'username' not in st.session_state:
+        st.session_state.username = None
     if 'bot_instance' not in st.session_state:
         st.session_state.bot_instance = None
     if 'bot_running' not in st.session_state:
@@ -115,6 +104,33 @@ def create_bot_instance():
         headless = st.session_state.get('headless_mode', True)
         st.session_state.bot_instance = LinkedInBot(headless=headless)
     return st.session_state.bot_instance
+
+def login_page():
+    """Simple login page"""
+    st.markdown('<div class="main-header">🔐 LinkedIn Bot Login</div>', unsafe_allow_html=True)
+    
+    with st.form("login_form"):
+        st.subheader("Login to Dashboard")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submit = st.form_submit_button("Login", use_container_width=True)
+        
+        if submit:
+            if check_credentials(username, password):
+                st.session_state.authenticated = True
+                st.session_state.username = username
+                st.success("Login successful!")
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
+    
+    with st.expander("🔑 Default Login Credentials"):
+        st.info("""
+        **Username:** admin  
+        **Password:** admin123
+        
+        ⚠️ **Important:** Change these credentials in production!
+        """)
 
 def main_dashboard():
     """Main dashboard page"""
@@ -269,92 +285,64 @@ def bot_settings():
     if st.button("Save Settings"):
         st.success("Settings saved successfully!")
 
-def login_page():
-    """Login page"""
-    st.markdown('<div class="main-header">🔐 LinkedIn Bot Login</div>', unsafe_allow_html=True)
-    
-    # Load authentication config
-    config = load_auth_config()
-    
-    authenticator = stauth.Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days'],
-        config['preauthorized']
-    )
-    
-    name, authentication_status, username = authenticator.login('Login to Dashboard', 'main')
-    
-    if authentication_status == False:
-        st.error('Username/password is incorrect')
-    elif authentication_status == None:
-        st.warning('Please enter your username and password')
-        
-        with st.expander("🔑 Default Login Credentials"):
-            st.info("""
-            **Username:** admin  
-            **Password:** admin123
-            
-            ⚠️ **Important:** Change these default credentials in production!
-            """)
-    
-    return authentication_status, name, username, authenticator
-
 def main():
     """Main application function"""
     init_session_state()
     
     # Check authentication
-    authentication_status, name, username, authenticator = login_page()
+    if not st.session_state.authenticated:
+        login_page()
+        return
     
-    if authentication_status == True:
-        # Sidebar navigation
-        with st.sidebar:
-            st.write(f'Welcome **{name}**')
-            
-            selected = option_menu(
-                menu_title="Navigation",
-                options=["Dashboard", "People Search", "Connection Manager", "Analytics", "Settings"],
-                icons=["house", "search", "people", "graph-up", "gear"],
-                menu_icon="cast",
-                default_index=0,
-                styles={
-                    "container": {"padding": "0!important", "background-color": "#fafafa"},
-                    "icon": {"color": "#0077B5", "font-size": "18px"},
-                    "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px"},
-                    "nav-link-selected": {"background-color": "#0077B5"},
-                }
-            )
-            
-            st.markdown("---")
-            
-            # Bot status in sidebar
-            if st.session_state.bot_running:
-                st.success("🟢 Bot is Running")
-                if st.button("⏹️ Stop Bot"):
-                    st.session_state.bot_running = False
-                    st.rerun()
-            else:
-                st.error("🔴 Bot is Stopped")
-                if st.button("▶️ Start Bot"):
-                    st.session_state.bot_running = True
-                    st.rerun()
-            
-            st.markdown("---")
-            authenticator.logout('Logout', 'sidebar')
+    # Sidebar navigation
+    with st.sidebar:
+        st.write(f'Welcome **{st.session_state.username}**')
         
-        # Main content area
-        if selected == "Dashboard":
-            main_dashboard()
-        elif selected == "People Search":
-            st.switch_page("pages/People_Search.py")
-        elif selected == "Connection Manager":
-            st.switch_page("pages/Connection_Manager.py")
-        elif selected == "Analytics":
-            st.switch_page("pages/Analytics.py")
-        elif selected == "Settings":
-            bot_settings()
+        selected = option_menu(
+            menu_title="Navigation",
+            options=["Dashboard", "People Search", "Connection Manager", "Analytics", "Settings"],
+            icons=["house", "search", "people", "graph-up", "gear"],
+            menu_icon="cast",
+            default_index=0,
+            styles={
+                "container": {"padding": "0!important", "background-color": "#fafafa"},
+                "icon": {"color": "#0077B5", "font-size": "18px"},
+                "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px"},
+                "nav-link-selected": {"background-color": "#0077B5"},
+            }
+        )
+        
+        st.markdown("---")
+        
+        # Bot status in sidebar
+        if st.session_state.bot_running:
+            st.success("🟢 Bot is Running")
+            if st.button("⏹️ Stop Bot"):
+                st.session_state.bot_running = False
+                st.rerun()
+        else:
+            st.error("🔴 Bot is Stopped")
+            if st.button("▶️ Start Bot"):
+                st.session_state.bot_running = True
+                st.rerun()
+        
+        st.markdown("---")
+        if st.button("🚪 Logout"):
+            st.session_state.authenticated = False
+            st.session_state.username = None
+            st.rerun()
+    
+    # Main content area
+    if selected == "Dashboard":
+        main_dashboard()
+    elif selected == "People Search":
+        st.switch_page("pages/People_Search.py")
+    elif selected == "Connection Manager":
+        st.switch_page("pages/Connection_Manager.py")
+    elif selected == "Analytics":
+        st.switch_page("pages/Analytics.py")
+    elif selected == "Settings":
+        bot_settings()
 
 if __name__ == "__main__":
     main()
