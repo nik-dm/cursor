@@ -367,6 +367,18 @@ def demo_settings():
     if st.button("Save Settings"):
         st.success("🎭 Demo: Settings would be saved!")
 
+def demo_content_creator():
+    """Demo content creator page"""
+    try:
+        # Import the Content Creator page
+        sys.path.append(str(Path(__file__).parent / "pages"))
+        from Content_Creator import main as content_creator_main
+        content_creator_main()
+    except Exception as e:
+        st.error(f"Error loading Content Creator: {str(e)}")
+        st.markdown("### Content Creator Demo")
+        st.info("This page would allow you to create and schedule posts for personal and company LinkedIn pages.")
+
 def main():
     """Main application function"""
     init_session_state()
@@ -382,8 +394,8 @@ def main():
         
         selected = option_menu(
             menu_title="Navigation",
-            options=["Dashboard", "People Search", "Connection Manager", "Analytics", "Settings"],
-            icons=["house", "search", "people", "graph-up", "gear"],
+            options=["Dashboard", "People Search", "Connection Manager", "Content Creator", "Analytics", "Settings"],
+            icons=["house", "search", "people", "pencil-square", "graph-up", "gear"],
             menu_icon="cast",
             default_index=0,
             styles={
@@ -425,6 +437,8 @@ def main():
         demo_people_search()
     elif selected == "Connection Manager":
         demo_connection_manager()
+    elif selected == "Content Creator":
+        demo_content_creator()
     elif selected == "Analytics":
         demo_analytics()
     elif selected == "Settings":

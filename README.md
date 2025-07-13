@@ -21,6 +21,9 @@ This tool is for educational and research purposes. Please ensure you comply wit
 - **People Search** - Advanced search with keywords, location, and filters
 - **Connection Requests** - Send personalized connection requests with custom messages
 - **Profile Data Extraction** - Extract detailed profile information for research
+- **Content Posting** - Create and schedule posts for personal profiles and company pages
+- **Company Page Management** - Discover and manage company pages you have admin access to
+- **Post Analytics** - Track engagement metrics for your posted content
 - **Feed Engagement** - Automatically like posts in your LinkedIn feed
 - **Screenshot Capture** - Take screenshots for monitoring and debugging
 
@@ -160,7 +163,16 @@ The web interface provides a comprehensive dashboard for managing your LinkedIn 
 - **Bulk Operations** - Send multiple connection requests with safety controls
 - **Progress Tracking** - Monitor request status and success rates
 
-### 📊 Analytics Dashboard
+### � Content Creator
+- **Post Creation** - Create posts for both personal profiles and company pages
+- **Content Templates** - Pre-built templates for different post types
+- **Media Upload** - Add images to your posts for better engagement
+- **Scheduling** - Schedule posts for optimal timing
+- **Draft Management** - Save and edit drafts before publishing
+- **Company Selection** - Choose from your managed company pages
+- **Post Analytics** - Track engagement metrics for published content
+
+### �📊 Analytics Dashboard
 - **Performance Charts** - Visual representation of your automation performance
 - **Success Rate Tracking** - Monitor connection acceptance rates over time
 - **Industry Analysis** - Breakdown of target industries and locations

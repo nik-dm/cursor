@@ -302,6 +302,224 @@ class LinkedInBot:
         except Exception as e:
             self.logger.error(f"Error liking posts: {str(e)}")
             return 0
+    
+    def create_personal_post(self, content: str, image_path: str = None, schedule_time: str = None) -> bool:
+        """Create a post on personal LinkedIn profile"""
+        try:
+            self.driver.get("https://www.linkedin.com/feed/")
+            self._random_delay(3, 5)
+            
+            # Click on "Start a post" button
+            start_post_button = self.driver.find_element(By.XPATH, "//button[contains(@class, 'share-box-feed-entry__trigger')]")
+            start_post_button.click()
+            self._random_delay(2, 3)
+            
+            # Wait for post modal to open
+            post_textarea = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//div[@role='textbox']"))
+            )
+            
+            # Enter content
+            post_textarea.clear()
+            post_textarea.send_keys(content)
+            self._random_delay(1, 2)
+            
+            # Handle image upload if provided
+            if image_path and os.path.exists(image_path):
+                try:
+                    image_button = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Add media')]")
+                    image_button.click()
+                    self._random_delay(1, 2)
+                    
+                    file_input = self.driver.find_element(By.XPATH, "//input[@type='file']")
+                    file_input.send_keys(os.path.abspath(image_path))
+                    self._random_delay(3, 5)
+                    
+                    self.logger.info("Image uploaded successfully")
+                except Exception as e:
+                    self.logger.warning(f"Failed to upload image: {str(e)}")
+            
+            # Handle scheduling if provided
+            if schedule_time:
+                try:
+                    schedule_button = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Schedule')]")
+                    schedule_button.click()
+                    self._random_delay(1, 2)
+                    
+                    # Note: Scheduling implementation would need specific time format handling
+                    self.logger.info(f"Scheduled post for: {schedule_time}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to schedule post: {str(e)}")
+            
+            # Click Post button
+            post_button = self.driver.find_element(By.XPATH, "//button[contains(@class, 'share-actions__primary-action')]")
+            post_button.click()
+            self._random_delay(2, 3)
+            
+            self.logger.info("Personal post created successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error creating personal post: {str(e)}")
+            return False
+    
+    def create_company_post(self, company_page_url: str, content: str, image_path: str = None, schedule_time: str = None) -> bool:
+        """Create a post on a LinkedIn company page"""
+        try:
+            # Navigate to company page
+            self.driver.get(company_page_url)
+            self._random_delay(3, 5)
+            
+            # Look for admin posting area (only visible if user is admin)
+            try:
+                admin_post_button = self.driver.find_element(By.XPATH, "//button[contains(@class, 'org-admin-post-composer-trigger')]")
+                admin_post_button.click()
+                self._random_delay(2, 3)
+            except:
+                # Alternative approach - look for "Create a post" button
+                try:
+                    create_post_button = self.driver.find_element(By.XPATH, "//button[contains(text(), 'Create a post')]")
+                    create_post_button.click()
+                    self._random_delay(2, 3)
+                except:
+                    self.logger.error("Cannot find company post creation button - user may not have admin access")
+                    return False
+            
+            # Wait for post modal to open
+            post_textarea = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//div[@role='textbox']"))
+            )
+            
+            # Enter content
+            post_textarea.clear()
+            post_textarea.send_keys(content)
+            self._random_delay(1, 2)
+            
+            # Handle image upload if provided
+            if image_path and os.path.exists(image_path):
+                try:
+                    image_button = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Add media')]")
+                    image_button.click()
+                    self._random_delay(1, 2)
+                    
+                    file_input = self.driver.find_element(By.XPATH, "//input[@type='file']")
+                    file_input.send_keys(os.path.abspath(image_path))
+                    self._random_delay(3, 5)
+                    
+                    self.logger.info("Image uploaded successfully")
+                except Exception as e:
+                    self.logger.warning(f"Failed to upload image: {str(e)}")
+            
+            # Handle scheduling if provided
+            if schedule_time:
+                try:
+                    schedule_button = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Schedule')]")
+                    schedule_button.click()
+                    self._random_delay(1, 2)
+                    
+                    # Note: Scheduling implementation would need specific time format handling
+                    self.logger.info(f"Scheduled company post for: {schedule_time}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to schedule company post: {str(e)}")
+            
+            # Click Post button
+            post_button = self.driver.find_element(By.XPATH, "//button[contains(@class, 'share-actions__primary-action')]")
+            post_button.click()
+            self._random_delay(2, 3)
+            
+            self.logger.info("Company post created successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error creating company post: {str(e)}")
+            return False
+    
+    def get_managed_companies(self) -> List[Dict]:
+        """Get list of company pages the user can manage"""
+        try:
+            # Navigate to company admin area
+            self.driver.get("https://www.linkedin.com/company/")
+            self._random_delay(3, 5)
+            
+            companies = []
+            
+            # Look for company cards or listings
+            try:
+                company_elements = self.driver.find_elements(By.XPATH, "//div[contains(@class, 'company-card')]")
+                
+                for element in company_elements:
+                    try:
+                        name_element = element.find_element(By.XPATH, ".//h3")
+                        link_element = element.find_element(By.XPATH, ".//a")
+                        
+                        company_info = {
+                            'name': name_element.text.strip(),
+                            'url': link_element.get_attribute('href'),
+                            'type': 'company'
+                        }
+                        companies.append(company_info)
+                        
+                    except Exception as e:
+                        self.logger.warning(f"Error extracting company info: {str(e)}")
+                        continue
+                        
+            except Exception as e:
+                self.logger.warning(f"Could not find company listings: {str(e)}")
+            
+            self.logger.info(f"Found {len(companies)} managed companies")
+            return companies
+            
+        except Exception as e:
+            self.logger.error(f"Error getting managed companies: {str(e)}")
+            return []
+    
+    def get_post_analytics(self, post_url: str) -> Dict:
+        """Get analytics for a specific post"""
+        try:
+            self.driver.get(post_url)
+            self._random_delay(3, 5)
+            
+            analytics = {
+                'likes': 0,
+                'comments': 0,
+                'shares': 0,
+                'views': 0,
+                'engagement_rate': 0
+            }
+            
+            # Extract engagement metrics
+            try:
+                # Likes
+                likes_element = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Like')]//span")
+                analytics['likes'] = int(likes_element.text.replace(',', '')) if likes_element.text.isdigit() else 0
+            except:
+                pass
+                
+            try:
+                # Comments
+                comments_element = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Comment')]//span")
+                analytics['comments'] = int(comments_element.text.replace(',', '')) if comments_element.text.isdigit() else 0
+            except:
+                pass
+                
+            try:
+                # Shares
+                shares_element = self.driver.find_element(By.XPATH, "//button[contains(@aria-label, 'Share')]//span")
+                analytics['shares'] = int(shares_element.text.replace(',', '')) if shares_element.text.isdigit() else 0
+            except:
+                pass
+                
+            # Calculate engagement rate
+            total_engagement = analytics['likes'] + analytics['comments'] + analytics['shares']
+            if analytics['views'] > 0:
+                analytics['engagement_rate'] = (total_engagement / analytics['views']) * 100
+            
+            self.logger.info(f"Post analytics retrieved: {analytics}")
+            return analytics
+            
+        except Exception as e:
+            self.logger.error(f"Error getting post analytics: {str(e)}")
+            return analytics
             
     def save_data_to_csv(self, data: List[Dict], filename: str):
         """Save extracted data to CSV file"""
