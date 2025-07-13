@@ -1,23 +1,16 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-import yaml
 import os
 import sys
 import hashlib
 from pathlib import Path
-
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
-
-# Import our modules
-from linkedin_bot import LinkedInBot
-from utils.message_templates import get_connection_message
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import json
 import time
+import random
 
 # Page config
 st.set_page_config(
@@ -60,6 +53,16 @@ st.markdown("""
     .sidebar .sidebar-content {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
+    
+    .demo-banner {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #333;
+        font-weight: bold;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -85,29 +88,36 @@ def init_session_state():
         st.session_state.authenticated = False
     if 'username' not in st.session_state:
         st.session_state.username = None
-    if 'bot_instance' not in st.session_state:
-        st.session_state.bot_instance = None
     if 'bot_running' not in st.session_state:
         st.session_state.bot_running = False
     if 'activity_log' not in st.session_state:
-        st.session_state.activity_log = []
+        st.session_state.activity_log = [
+            {'timestamp': '09:15:23', 'action': 'Demo: LinkedIn automation started'},
+            {'timestamp': '09:16:45', 'action': 'Demo: Found 25 profiles for "python developer"'},
+            {'timestamp': '09:18:12', 'action': 'Demo: Sent 5 connection requests'},
+            {'timestamp': '09:19:30', 'action': 'Demo: Profile data extracted from 3 profiles'},
+        ]
     if 'daily_stats' not in st.session_state:
         st.session_state.daily_stats = {
-            'connections_sent': 0,
-            'messages_sent': 0,
-            'profiles_viewed': 0
+            'connections_sent': random.randint(15, 35),
+            'messages_sent': random.randint(5, 15),
+            'profiles_viewed': random.randint(30, 80)
         }
 
-def create_bot_instance():
-    """Create LinkedIn bot instance"""
-    if st.session_state.bot_instance is None:
-        headless = st.session_state.get('headless_mode', True)
-        st.session_state.bot_instance = LinkedInBot(headless=headless)
-    return st.session_state.bot_instance
+def generate_demo_message(profile_name, field):
+    """Generate a demo personalized message"""
+    templates = [
+        f"Hi {profile_name}! I noticed your expertise in {field} and would love to connect.",
+        f"Hello {profile_name}! Your background in {field} is impressive. Let's connect!",
+        f"Hi {profile_name}! I'm also passionate about {field}. Would love to network with you.",
+    ]
+    return random.choice(templates)
 
 def login_page():
     """Simple login page"""
     st.markdown('<div class="main-header">🔐 LinkedIn Bot Login</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="demo-banner">🎭 DEMO MODE - This is a demonstration of the LinkedIn Automation UI</div>', unsafe_allow_html=True)
     
     with st.form("login_form"):
         st.subheader("Login to Dashboard")
@@ -129,18 +139,20 @@ def login_page():
         **Username:** admin  
         **Password:** admin123
         
-        ⚠️ **Important:** Change these credentials in production!
+        ⚠️ **Note:** This is a demo version showcasing the UI functionality.
         """)
 
 def main_dashboard():
     """Main dashboard page"""
+    st.markdown('<div class="demo-banner">🎭 DEMO MODE - Simulated LinkedIn Automation Dashboard</div>', unsafe_allow_html=True)
+    
     st.markdown('<div class="main-header">🤖 LinkedIn Automation Dashboard</div>', unsafe_allow_html=True)
     
     # Status overview
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        status = "🟢 Online" if st.session_state.bot_running else "🔴 Offline"
+        status = "🟢 Demo Mode" if st.session_state.bot_running else "🔴 Demo Offline"
         st.metric("Bot Status", status)
     
     with col2:
@@ -160,28 +172,25 @@ def main_dashboard():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("🎯 Start People Search", use_container_width=True):
-            st.switch_page("pages/People_Search.py")
+        if st.button("🎯 Demo People Search", use_container_width=True):
+            st.info("🎭 In the full version, this would open the People Search page with advanced filtering capabilities.")
     
     with col2:
-        if st.button("📧 Send Connections", use_container_width=True):
-            st.switch_page("pages/Connection_Manager.py")
+        if st.button("📧 Demo Connections", use_container_width=True):
+            st.info("🎭 In the full version, this would open the Connection Manager for sending personalized requests.")
     
     with col3:
-        if st.button("📊 View Analytics", use_container_width=True):
-            st.switch_page("pages/Analytics.py")
+        if st.button("📊 Demo Analytics", use_container_width=True):
+            st.info("🎭 In the full version, this would show detailed performance analytics and insights.")
     
     # Recent Activity
-    st.subheader("📋 Recent Activity")
+    st.subheader("📋 Recent Activity (Demo)")
     
-    if st.session_state.activity_log:
-        for activity in st.session_state.activity_log[-10:]:
-            st.write(f"**{activity['timestamp']}** - {activity['action']}")
-    else:
-        st.info("No recent activity. Start automating to see logs here!")
+    for activity in st.session_state.activity_log[-10:]:
+        st.write(f"**{activity['timestamp']}** - {activity['action']}")
     
     # System Health
-    st.subheader("🏥 System Health")
+    st.subheader("🏥 System Health (Demo)")
     
     col1, col2 = st.columns(2)
     
@@ -200,80 +209,154 @@ def main_dashboard():
         fig = go.Figure()
         fig.add_trace(go.Bar(name='Current', x=limits_data['Metric'], y=limits_data['Current'], marker_color='#0077B5'))
         fig.add_trace(go.Bar(name='Limit', x=limits_data['Metric'], y=limits_data['Limit'], marker_color='#E0E0E0'))
-        fig.update_layout(title="Daily Usage vs Limits", barmode='group', height=300)
+        fig.update_layout(title="Daily Usage vs Limits (Demo)", barmode='group', height=300)
         
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        # Success rate (mock data for now)
+        # Success rate (mock data)
         success_data = {
             'Date': [datetime.now() - timedelta(days=i) for i in range(7, 0, -1)],
             'Success Rate': [85, 92, 78, 96, 89, 94, 87]
         }
         
-        fig = px.line(success_data, x='Date', y='Success Rate', title="Success Rate (Last 7 Days)")
+        fig = px.line(success_data, x='Date', y='Success Rate', title="Success Rate (Demo - Last 7 Days)")
         fig.update_layout(height=300)
         
         st.plotly_chart(fig, use_container_width=True)
 
-def bot_settings():
-    """Bot configuration settings"""
-    st.header("⚙️ Bot Configuration")
+def demo_people_search():
+    """Demo people search page"""
+    st.markdown('<div class="demo-banner">🎭 DEMO: People Search Interface</div>', unsafe_allow_html=True)
     
-    # LinkedIn Credentials
-    st.subheader("🔐 LinkedIn Credentials")
+    st.title("🔍 People Search (Demo)")
+    st.markdown("This demonstrates the search interface for finding LinkedIn profiles.")
     
-    with st.form("credentials_form"):
-        email = st.text_input("LinkedIn Email", value=os.getenv('LINKEDIN_EMAIL', ''))
-        password = st.text_input("LinkedIn Password", type="password")
+    with st.form("demo_search_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            keywords = st.text_input("Keywords", value="python developer")
+            location = st.text_input("Location", value="San Francisco")
+        
+        with col2:
+            connection_level = st.selectbox("Connection Level", ["All", "1st", "2nd", "3rd+"], index=1)
+            industry_filter = st.multiselect("Industry Filter", ["Technology", "Finance", "Healthcare"])
+        
+        search_submitted = st.form_submit_button("🔍 Demo Search", use_container_width=True, type="primary")
+    
+    if search_submitted:
+        with st.spinner("Simulating LinkedIn search..."):
+            time.sleep(2)
+        
+        st.success(f"Demo: Found 42 profiles for '{keywords}' in {location}")
+        
+        # Demo results
+        demo_profiles = [
+            {"name": "John Smith", "title": "Senior Python Developer", "company": "Tech Corp"},
+            {"name": "Sarah Johnson", "title": "Full Stack Developer", "company": "StartupXYZ"},
+            {"name": "Mike Chen", "title": "Lead Software Engineer", "company": "BigTech Inc"},
+        ]
+        
+        st.subheader("📋 Demo Search Results")
+        for i, profile in enumerate(demo_profiles, 1):
+            col1, col2, col3 = st.columns([2, 2, 1])
+            with col1:
+                st.write(f"**{profile['name']}**")
+            with col2:
+                st.write(f"{profile['title']} at {profile['company']}")
+            with col3:
+                if st.button("Connect", key=f"connect_{i}"):
+                    st.info(f"🎭 Demo: Would send connection request to {profile['name']}")
+
+def demo_connection_manager():
+    """Demo connection manager page"""
+    st.markdown('<div class="demo-banner">🎭 DEMO: Connection Manager Interface</div>', unsafe_allow_html=True)
+    
+    st.title("📧 Connection Manager (Demo)")
+    st.markdown("This demonstrates the connection request management system.")
+    
+    st.subheader("➕ Demo Message Templates")
+    
+    template_type = st.selectbox(
+        "Message Template Type",
+        ["Professional", "Casual", "Industry Specific", "Educational"]
+    )
+    
+    demo_profiles = [
+        {"name": "Alice Brown", "field": "data science"},
+        {"name": "Bob Wilson", "field": "software development"},
+    ]
+    
+    st.subheader("📝 Demo Personalized Messages")
+    for profile in demo_profiles:
+        message = generate_demo_message(profile['name'], profile['field'])
+        st.write(f"**{profile['name']}:** {message}")
+    
+    if st.button("🚀 Demo Send Connection Requests"):
+        with st.spinner("Simulating connection requests..."):
+            time.sleep(3)
+        st.success("🎭 Demo: Would send 2 personalized connection requests!")
+
+def demo_analytics():
+    """Demo analytics page"""
+    st.markdown('<div class="demo-banner">🎭 DEMO: Analytics Dashboard</div>', unsafe_allow_html=True)
+    
+    st.title("📊 Analytics Dashboard (Demo)")
+    st.markdown("This demonstrates the performance analytics and insights.")
+    
+    # Demo metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Connections", "147", delta="12")
+    with col2:
+        st.metric("Success Rate", "89%", delta="5%")
+    with col3:
+        st.metric("Profile Views", "423", delta="23")
+    with col4:
+        st.metric("Response Rate", "34%", delta="2%")
+    
+    # Demo charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Industry breakdown
+        industry_data = {"Technology": 45, "Finance": 25, "Healthcare": 20, "Other": 10}
+        fig = px.pie(values=list(industry_data.values()), names=list(industry_data.keys()), 
+                     title="Target Industries (Demo)")
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        # Weekly activity
+        dates = [datetime.now() - timedelta(days=i) for i in range(7, 0, -1)]
+        activity = [12, 18, 15, 22, 19, 8, 5]
+        
+        fig = px.bar(x=dates, y=activity, title="Weekly Activity (Demo)")
+        fig.update_layout(xaxis_title="Date", yaxis_title="Connections")
+        st.plotly_chart(fig, use_container_width=True)
+
+def demo_settings():
+    """Demo settings page"""
+    st.markdown('<div class="demo-banner">🎭 DEMO: Settings & Configuration</div>', unsafe_allow_html=True)
+    
+    st.title("⚙️ Settings (Demo)")
+    st.markdown("This demonstrates the configuration interface.")
+    
+    st.subheader("🔐 LinkedIn Credentials (Demo)")
+    with st.form("demo_credentials_form"):
+        email = st.text_input("LinkedIn Email", placeholder="your_email@example.com")
+        password = st.text_input("LinkedIn Password", type="password", placeholder="Your password")
         
         if st.form_submit_button("Save Credentials"):
-            # Save to .env file
-            env_path = Path(__file__).parent.parent / '.env'
-            
-            # Read existing .env
-            env_content = ""
-            if env_path.exists():
-                with open(env_path, 'r') as f:
-                    lines = f.readlines()
-                
-                # Update existing lines or add new ones
-                email_updated = False
-                password_updated = False
-                
-                for i, line in enumerate(lines):
-                    if line.startswith('LINKEDIN_EMAIL='):
-                        lines[i] = f'LINKEDIN_EMAIL={email}\n'
-                        email_updated = True
-                    elif line.startswith('LINKEDIN_PASSWORD='):
-                        lines[i] = f'LINKEDIN_PASSWORD={password}\n'
-                        password_updated = True
-                
-                env_content = ''.join(lines)
-                
-                if not email_updated:
-                    env_content += f'\nLINKEDIN_EMAIL={email}\n'
-                if not password_updated:
-                    env_content += f'LINKEDIN_PASSWORD={password}\n'
-            else:
-                env_content = f'LINKEDIN_EMAIL={email}\nLINKEDIN_PASSWORD={password}\n'
-            
-            with open(env_path, 'w') as f:
-                f.write(env_content)
-            
-            st.success("Credentials saved successfully!")
+            st.success("🎭 Demo: Credentials would be saved securely!")
     
-    st.markdown("---")
-    
-    # Automation Settings
-    st.subheader("🎛️ Automation Settings")
+    st.subheader("🎛️ Automation Settings (Demo)")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        headless_mode = st.checkbox("Headless Mode (Background)", value=True)
-        st.session_state.headless_mode = headless_mode
-        
+        headless_mode = st.checkbox("Headless Mode", value=True)
         max_connections = st.slider("Max Connections per Day", 1, 100, 50)
         max_messages = st.slider("Max Messages per Day", 1, 50, 20)
         
@@ -283,7 +366,7 @@ def bot_settings():
         page_timeout = st.slider("Page Load Timeout (seconds)", 10, 60, 30)
     
     if st.button("Save Settings"):
-        st.success("Settings saved successfully!")
+        st.success("🎭 Demo: Settings would be saved!")
 
 def main():
     """Main application function"""
@@ -316,15 +399,19 @@ def main():
         
         # Bot status in sidebar
         if st.session_state.bot_running:
-            st.success("🟢 Bot is Running")
-            if st.button("⏹️ Stop Bot"):
+            st.success("🟢 Demo Mode")
+            if st.button("⏹️ Stop Demo"):
                 st.session_state.bot_running = False
                 st.rerun()
         else:
-            st.error("🔴 Bot is Stopped")
-            if st.button("▶️ Start Bot"):
+            st.error("🔴 Demo Offline")
+            if st.button("▶️ Start Demo"):
                 st.session_state.bot_running = True
                 st.rerun()
+        
+        st.markdown("---")
+        
+        st.info("🎭 **Demo Mode**\n\nThis showcases the UI of a complete LinkedIn automation platform. The full version includes real automation capabilities.")
         
         st.markdown("---")
         if st.button("🚪 Logout"):
@@ -336,13 +423,13 @@ def main():
     if selected == "Dashboard":
         main_dashboard()
     elif selected == "People Search":
-        st.switch_page("pages/People_Search.py")
+        demo_people_search()
     elif selected == "Connection Manager":
-        st.switch_page("pages/Connection_Manager.py")
+        demo_connection_manager()
     elif selected == "Analytics":
-        st.switch_page("pages/Analytics.py")
+        demo_analytics()
     elif selected == "Settings":
-        bot_settings()
+        demo_settings()
 
 if __name__ == "__main__":
     main()
