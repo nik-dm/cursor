@@ -8,6 +8,14 @@ This tool is for educational and research purposes. Please ensure you comply wit
 
 ## 🚀 Features
 
+### 🖥️ Web-Based Dashboard
+- **Beautiful UI** - Modern, responsive web interface built with Streamlit
+- **User Authentication** - Secure login system with session management
+- **Real-time Monitoring** - Live bot status and activity tracking
+- **Interactive Analytics** - Charts, graphs, and performance insights
+- **Queue Management** - Visual connection request queue with bulk actions
+- **Settings Panel** - Easy configuration management through the UI
+
 ### Core Automation
 - **Automated Login** - Secure login with anti-detection measures
 - **People Search** - Advanced search with keywords, location, and filters
@@ -63,9 +71,44 @@ MAX_CONNECTIONS_PER_DAY=50
 MAX_MESSAGES_PER_DAY=20
 ```
 
+5. **Launch the Web Dashboard:**
+```bash
+# Quick launch
+./launch_ui.sh
+
+# Or using Python
+python3 launch_ui.py
+```
+
+6. **Access the dashboard:**
+- Open http://localhost:8501 in your browser
+- Login with default credentials: `admin` / `admin123`
+- Configure your settings through the web interface
+
 ## 🎯 Quick Start
 
-### Basic Usage
+### Option 1: Web Dashboard (Recommended)
+
+**Launch the web interface:**
+```bash
+# Easy launch (recommended)
+./launch_ui.sh
+
+# Or using Python
+python3 launch_ui.py
+
+# Or directly with Streamlit
+streamlit run ui/app.py
+```
+
+**Access the dashboard:**
+- 🌐 Open http://localhost:8501 in your browser
+- 🔐 Login with: `admin` / `admin123`
+- 🎯 Use the intuitive web interface to manage your automation
+
+### Option 2: Python Scripts
+
+**Basic Usage:**
 
 ```python
 from linkedin_bot import LinkedInBot
@@ -95,7 +138,40 @@ finally:
     bot.close_session()
 ```
 
-## 📚 Examples
+## �️ Web Dashboard Features
+
+The web interface provides a comprehensive dashboard for managing your LinkedIn automation:
+
+### 🏠 Dashboard Overview
+- **Real-time Status** - Monitor bot activity and connection status
+- **Daily Statistics** - Track connections sent, profiles viewed, and success rates
+- **Quick Actions** - Easy access to search, connection management, and analytics
+- **Activity Log** - Real-time feed of bot activities and operations
+
+### 🔍 People Search
+- **Advanced Search** - Find profiles using keywords, location, and industry filters
+- **Search Templates** - Pre-configured searches for common use cases
+- **Bulk Selection** - Select multiple profiles for batch operations
+- **Export Results** - Download search results as CSV files
+
+### 📧 Connection Manager
+- **Queue System** - Organize connection requests in a visual queue
+- **Message Templates** - Use built-in or create custom message templates
+- **Bulk Operations** - Send multiple connection requests with safety controls
+- **Progress Tracking** - Monitor request status and success rates
+
+### 📊 Analytics Dashboard
+- **Performance Charts** - Visual representation of your automation performance
+- **Success Rate Tracking** - Monitor connection acceptance rates over time
+- **Industry Analysis** - Breakdown of target industries and locations
+- **Export Reports** - Generate and download detailed analytics reports
+
+### ⚙️ Settings & Configuration
+- **Credential Management** - Securely update LinkedIn login credentials
+- **Automation Limits** - Configure daily limits and safety parameters
+- **Browser Settings** - Control headless mode and timing preferences
+
+## �📚 Command Line Examples
 
 The `examples/` directory contains ready-to-use scripts:
 

@@ -1,0 +1,12 @@
+credentials:
+  usernames:
+    admin:
+      email: admin@linkedin-bot.com
+      name: Administrator
+      password: $2b$12$k8Y1THKC7zJW8Q7x8GJ8XO8ZX7ZJ8Y1THKC7zJW8Q7x8GJ8XO8ZX7 # admin123
+cookie:
+  name: linkedin_bot_auth
+  key: linkedin_bot_secret_key_change_this_in_production
+  expiry_days: 30
+preauthorized:
+  - admin@linkedin-bot.com
