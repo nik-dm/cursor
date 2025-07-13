@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import sys
 from pathlib import Path
 import time
@@ -144,13 +143,14 @@ def main():
             st.metric("Total Results", len(st.session_state.search_results))
         with col2:
             if st.button("💾 Export Results"):
-                df = pd.DataFrame([{'Profile URL': url} for url in st.session_state.search_results])
-                csv = df.to_csv(index=False)
+                results_data = [{'Profile URL': url} for url in st.session_state.search_results]
+                import json
+                json_data = json.dumps(results_data, indent=2)
                 st.download_button(
-                    label="Download CSV",
-                    data=csv,
-                    file_name=f"linkedin_search_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                    mime="text/csv"
+                    label="Download JSON",
+                    data=json_data,
+                    file_name=f"linkedin_search_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    mime="application/json"
                 )
         with col3:
             if st.button("🔄 Clear Results"):
@@ -172,7 +172,7 @@ def main():
         
         # Display results with selection
         edited_df = st.data_editor(
-            pd.DataFrame(results_data),
+            results_data,
             column_config={
                 "Select": st.column_config.CheckboxColumn("Select"),
                 "Profile URL": st.column_config.LinkColumn("Profile URL"),
@@ -212,8 +212,7 @@ def main():
         st.subheader("📚 Search History")
         
         with st.expander("View Recent Searches"):
-            history_df = pd.DataFrame(st.session_state.search_history)
-            st.dataframe(history_df, use_container_width=True)
+            st.dataframe(st.session_state.search_history, use_container_width=True)
             
             if st.button("🗑️ Clear History"):
                 st.session_state.search_history = []
@@ -298,16 +297,16 @@ def extract_profile_data(profile_urls):
         st.success(f"Extracted data from {len(extracted_data)} profiles!")
         
         # Display extracted data
-        df = pd.DataFrame(extracted_data)
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(extracted_data, use_container_width=True)
         
         # Download button
-        csv = df.to_csv(index=False)
+        import json
+        json_data = json.dumps(extracted_data, indent=2)
         st.download_button(
             label="Download Extracted Data",
-            data=csv,
-            file_name=filename,
-            mime="text/csv"
+            data=json_data,
+            file_name=filename.replace('.csv', '.json'),
+            mime="application/json"
         )
     else:
         st.error("No data could be extracted from the selected profiles.")
@@ -317,14 +316,15 @@ def save_selected_profiles(profile_urls):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"selected_profiles_{timestamp}.csv"
     
-    df = pd.DataFrame([{'Profile URL': url} for url in profile_urls])
-    csv = df.to_csv(index=False)
+    profiles_data = [{'Profile URL': url} for url in profile_urls]
+    import json
+    json_data = json.dumps(profiles_data, indent=2)
     
     st.download_button(
         label="Download Selected Profiles",
-        data=csv,
-        file_name=filename,
-        mime="text/csv"
+        data=json_data,
+        file_name=filename.replace('.csv', '.json'),
+        mime="application/json"
     )
 
 if __name__ == "__main__":

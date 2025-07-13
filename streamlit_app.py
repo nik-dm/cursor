@@ -1,12 +1,9 @@
-# Streamlit Cloud Entry Point
-# This file serves as the main entry point for Streamlit Cloud deployment
-
+import streamlit as st
 import sys
 from pathlib import Path
 
-# Ensure the ui directory is in the path
-ui_path = Path(__file__).parent / "ui"
-sys.path.insert(0, str(ui_path))
+# Add ui directory to path
+sys.path.insert(0, str(Path(__file__).parent / "ui"))
 
 # Import and run the main app
 from app import main

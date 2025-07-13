@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import sys
 from pathlib import Path
 import time
@@ -230,15 +229,18 @@ def main():
             st.metric("Daily Remaining", remaining)
         
         # Queue table
-        queue_df = pd.DataFrame(st.session_state.connection_queue)
+        queue_data = []
+        for item in st.session_state.connection_queue:
+            queue_item = {
+                'Select': False,
+                'Profile URL': item.get('profile_url', ''),
+                'Template Type': item.get('template_type', ''),
+                'Status': item.get('status', ''),
+                'Added At': item.get('added_at', '')
+            }
+            queue_data.append(queue_item)
         
-        # Add selection column
-        queue_df['Select'] = False
-        
-        # Reorder columns
-        columns = ['Select', 'profile_url', 'template_type', 'status', 'added_at']
-        queue_display = queue_df[columns].copy()
-        queue_display.columns = ['Select', 'Profile URL', 'Template Type', 'Status', 'Added At']
+        queue_display = queue_data
         
         edited_queue = st.data_editor(
             queue_display,
@@ -340,15 +342,17 @@ def main():
         
         # History table
         with st.expander("View Connection History"):
-            history_df = pd.DataFrame(st.session_state.connection_history)
+            history_data = []
+            for item in st.session_state.connection_history:
+                history_item = {
+                    'Profile Url': item.get('profile_url', ''),
+                    'Template Type': item.get('template_type', ''),
+                    'Status': item.get('status', ''),
+                    'Sent At': item.get('sent_at', '')
+                }
+                history_data.append(history_item)
             
-            # Select relevant columns
-            display_columns = ['profile_url', 'template_type', 'status', 'sent_at']
-            available_columns = [col for col in display_columns if col in history_df.columns]
-            
-            if available_columns:
-                history_display = history_df[available_columns].copy()
-                history_display.columns = [col.replace('_', ' ').title() for col in available_columns]
+            history_display = history_data
                 
                 st.dataframe(history_display, use_container_width=True)
                 

@@ -1,11 +1,11 @@
 import streamlit as st
-import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import sys
 from pathlib import Path
 import json
+from collections import Counter
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
@@ -311,12 +311,10 @@ def main():
             'Success Rate': [85, 90, 82, 95, 88, 78, 80]
         }
         
-        week_df = pd.DataFrame(week_data)
-        
         fig = go.Figure()
         fig.add_trace(go.Bar(
-            x=week_df['Day'],
-            y=week_df['Connections'],
+            x=week_data['Day'],
+            y=week_data['Connections'],
             name='Connections',
             marker_color='#0077B5'
         ))
@@ -337,8 +335,7 @@ def main():
         
         if search_history:
             # Search history table
-            search_df = pd.DataFrame(search_history)
-            st.dataframe(search_df, use_container_width=True)
+            st.dataframe(search_history, use_container_width=True)
             
             # Top keywords analysis
             all_keywords = []
@@ -352,7 +349,8 @@ def main():
                 top_keywords = keyword_counts.most_common(10)
                 
                 if top_keywords:
-                    keywords_df = pd.DataFrame(top_keywords, columns=['Keyword', 'Count'])
+                    keywords_data = [{'Keyword': k, 'Count': c} for k, c in top_keywords]
+                    keywords_df = keywords_data
                     
                     fig = px.bar(
                         keywords_df,
@@ -373,11 +371,15 @@ def main():
         
         if connection_history:
             # Connection history table
-            history_df = pd.DataFrame(connection_history)
+            st.dataframe(connection_history, use_container_width=True)
             
             # Connection status distribution
-            if 'status' in history_df.columns:
-                status_counts = history_df['status'].value_counts()
+            status_counts = {}
+            for item in connection_history:
+                status = item.get('status', 'Unknown')
+                status_counts[status] = status_counts.get(status, 0) + 1
+            
+            if status_counts:
                 
                 fig = px.pie(
                     values=status_counts.values,
@@ -448,16 +450,16 @@ def main():
                     ]
                 }
                 
-                report_df = pd.DataFrame(report_data)
-                st.dataframe(report_df, use_container_width=True)
+                st.dataframe(report_data, use_container_width=True)
                 
                 # Download button
-                csv = report_df.to_csv(index=False)
+                import json
+                json_data = json.dumps(report_data, indent=2)
                 st.download_button(
                     label="📥 Download Report",
-                    data=csv,
-                    file_name=f"linkedin_automation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                    mime="text/csv"
+                    data=json_data,
+                    file_name=f"linkedin_automation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    mime="application/json"
                 )
         
         with col2:
